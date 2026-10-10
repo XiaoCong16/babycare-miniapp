@@ -1,0 +1,34 @@
+<view class="container">
+  <view class="card">
+    <picker mode="selector" range="{{['feed','diaper','sleep','temp','note']}}" bindchange="bindTypeChange">
+      <view>记录类型：{{type}}</view>
+    </picker>
+
+    <view wx:if="{{type === 'feed'}}">
+      <picker mode="selector" range="{{['breast','formula','mix']}}" bindchange="bindFeedTypeChange">
+        <view>喂养方式：{{feedType}}</view>
+      </picker>
+    </view>
+
+    <view wx:if="{{type === 'diaper'}}">
+      <picker mode="selector" range="{{['wet','dry','poop','diarrhea']}}" bindchange="bindDiaperStatusChange">
+        <view>尿便状态：{{diaperStatus}}</view>
+      </picker>
+    </view>
+
+    <picker mode="datetime" bindchange="bindTimeChange">
+      <view>记录时间：{{recordTime || '选择时间'}}</view>
+    </picker>
+
+    <textarea bindinput="bindNoteInput" placeholder="备注" />
+    <button bindtap="submitRecord">提交记录</button>
+  </view>
+
+  <view class="list">
+    <view wx:for="{{records}}" wx:key="id" class="item">
+      <text>{{item.recordType}}</text>
+      <text>{{item.recordTime}}</text>
+      <text>{{item.note || ''}}</text>
+    </view>
+  </view>
+</view>

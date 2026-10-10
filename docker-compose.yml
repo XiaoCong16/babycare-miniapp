@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: babycare-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: babycare
+      MYSQL_USER: babycare
+      MYSQL_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
