@@ -1,12 +1,6 @@
 name: Deploy backend
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
-      - '.github/scripts/deploy-backend.sh'
   workflow_dispatch:
 
 concurrency:

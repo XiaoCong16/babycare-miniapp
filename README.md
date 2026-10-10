@@ -77,7 +77,7 @@ tar -xzf target/babycare-server.tar.gz
 
 ## GitHub Actions 自动部署后端
 
-仓库中的 [部署工作流](.github/workflows/deploy-backend.yml) 会在 `main` 分支的后端或部署脚本更新后构建并部署，也可以在 GitHub 的 **Actions → Deploy backend → Run workflow** 手动触发。服务器需要能通过 SSH 访问，并预装 Java 17、`bash`、`tar` 和 `curl`。部署账号需要能写入家目录（暂存上传包）及正式部署目录的上级目录。
+仓库中的 [部署工作流](.github/workflows/deploy-backend.yml) 仅在 GitHub 的 **Actions → Deploy backend → Run workflow** 手动触发；普通代码提交不会自动部署。服务器需要能通过 SSH 访问，并预装 Java 17、`bash`、`tar` 和 `curl`。部署账号需要能写入家目录（暂存上传包）及正式部署目录的上级目录。
 
 1. 在服务器创建专用部署账号，并将部署公钥添加到该账号的 `~/.ssh/authorized_keys`。在可信环境核对服务器 SSH 主机密钥指纹后，将对应的 `known_hosts` 条目用于下面的 Secret。
 
