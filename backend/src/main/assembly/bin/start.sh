@@ -2,6 +2,12 @@
 set -euo pipefail
 APP_HOME=$(cd "$(dirname "$0")/.." && pwd)
 . "${APP_HOME}/bin/boot.conf"
+ENV_FILE="${APP_HOME}/../babycare-server.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE"
+    set +a
+fi
 
 if is_running; then
     echo "${APP_NAME} is already running (PID $(cat "$PID_FILE"))"
