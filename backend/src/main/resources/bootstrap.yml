@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: babycare-server
+  cloud:
+    nacos:
+      config:
+        file-extension: yml
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.0:8848}
+        namespace: ${NACOS_NAMESPACE:xc}
+        encode: UTF-8
+        group: DEFAULT_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+  config:
+    import: nacos:common-wxapp?group=DEFAULT_GROUP&refreshEnabled=false

@@ -1,29 +1,27 @@
 package com.example.babycare.domain.model;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "users")
+@TableName("users")
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String openid;
 
     private String nickName;
     private String avatarUrl;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    protected User() {
+    public User() {
     }
 
     public User(String openid, String nickName, String avatarUrl) {

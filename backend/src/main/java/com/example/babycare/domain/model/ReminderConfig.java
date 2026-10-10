@@ -1,35 +1,30 @@
 package com.example.babycare.domain.model;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "reminder_config")
+@TableName("reminder_config")
 public class ReminderConfig {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;
 
-    @Column(name = "feed_interval_minutes")
     private Integer feedIntervalMinutes = 180;
 
-    @Column(name = "diaper_interval_minutes")
     private Integer diaperIntervalMinutes = 240;
 
-    @Column(name = "reminder_enabled")
     private Boolean reminderEnabled = true;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    protected ReminderConfig() {
+    public ReminderConfig() {
     }
 
     public static ReminderConfig defaultConfig(Long userId) {
