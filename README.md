@@ -82,7 +82,7 @@ tar -xzf target/babycare-server.tar.gz
 1. 在服务器创建专用部署账号，并将部署公钥添加到该账号的 `~/.ssh/authorized_keys`。在可信环境核对服务器 SSH 主机密钥指纹后，将对应的 `known_hosts` 条目用于下面的 Secret。
 
    可在本地执行 `ssh-keygen -t ed25519 -f ~/.ssh/babycare_deploy -N ''` 创建专用密钥；将 `babycare_deploy.pub` 的内容添加到服务器账号的 `authorized_keys`，将 `babycare_deploy` 的完整内容添加到 `DEPLOY_SSH_KEY`。`DEPLOY_KNOWN_HOSTS` 可从 `ssh-keyscan -H 服务器地址` 获取，填写前须与服务器实际指纹核对；自定义 SSH 端口时使用 `ssh-keyscan -p 端口 -H 服务器地址`。
-2. 在仓库 **Settings → Secrets and variables → Actions** 中添加以下 Repository secrets：
+2. 在仓库 **Settings → Environments → qiniuyun → Environment secrets** 中添加以下环境 Secrets。部署工作流已绑定 `qiniuyun` 环境：
 
    | 名称 | 内容 |
    | --- | --- |
@@ -91,7 +91,7 @@ tar -xzf target/babycare-server.tar.gz
    | `DEPLOY_SSH_KEY` | 对应的 SSH 私钥原文，包含首尾标记和换行 |
    | `DEPLOY_KNOWN_HOSTS` | 已核对指纹的服务器 `known_hosts` 条目 |
 
-   SSH 端口不是 22 时，再添加 Repository variable `DEPLOY_PORT`。
+   SSH 端口不是 22 时，再在同一环境的 **Environment variables** 中添加 `DEPLOY_PORT`。
 3. 确认服务器本机 `127.0.0.1:8848` 的 Nacos 中已有命名空间 ID `xc`、`DEFAULT_GROUP` 下的 `common-wxapp` 配置，包含 `WXAPP_DB_CLASS_NAME`、`WXAPP_DB_URL`、`WXAPP_DB_USERNAME` 和 `WXAPP_DB_PASSWORD`。如果命名空间 ID 不同，在服务器家目录创建 `babycare-server.env`，例如：
 
    ```bash
