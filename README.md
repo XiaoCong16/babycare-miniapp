@@ -77,7 +77,7 @@ tar -xzf target/babycare-server.tar.gz
 
 ## GitHub Actions 自动部署后端
 
-仓库中的 [部署工作流](.github/workflows/deploy-backend.yml) 会在 `main` 分支的后端或部署脚本更新后构建并部署，也可以在 GitHub 的 **Actions → Deploy backend → Run workflow** 手动触发。服务器需要能通过 SSH 访问，并预装 Java 17、`bash`、`tar` 和 `curl`。部署账号的家目录需要有写入权限。
+仓库中的 [部署工作流](.github/workflows/deploy-backend.yml) 会在 `main` 分支的后端或部署脚本更新后构建并部署，也可以在 GitHub 的 **Actions → Deploy backend → Run workflow** 手动触发。服务器需要能通过 SSH 访问，并预装 Java 17、`bash`、`tar` 和 `curl`。部署账号需要能写入家目录（暂存上传包）及正式部署目录的上级目录。
 
 1. 在服务器创建专用部署账号，并将部署公钥添加到该账号的 `~/.ssh/authorized_keys`。在可信环境核对服务器 SSH 主机密钥指纹后，将对应的 `known_hosts` 条目用于下面的 Secret。
 
@@ -91,8 +91,8 @@ tar -xzf target/babycare-server.tar.gz
    | `DEPLOY_SSH_KEY` | 对应的 SSH 私钥原文，包含首尾标记和换行 |
    | `DEPLOY_KNOWN_HOSTS` | 已核对指纹的服务器 `known_hosts` 条目 |
 
-   SSH 端口不是 22 时，再在同一环境的 **Environment variables** 中添加 `DEPLOY_PORT`。
-3. 确认服务器本机 `127.0.0.1:8848` 的 Nacos 中已有命名空间 ID `xc`、`DEFAULT_GROUP` 下的 `common-wxapp` 配置，包含 `WXAPP_DB_CLASS_NAME`、`WXAPP_DB_URL`、`WXAPP_DB_USERNAME` 和 `WXAPP_DB_PASSWORD`。如果命名空间 ID 不同，在服务器家目录创建 `babycare-server.env`，例如：
+   SSH 端口不是 22 时，在同一环境的 **Environment variables** 中添加 `DEPLOY_PORT`。可在这里添加 `DEPLOY_DIR` 设置服务器上的完整部署目录，默认是 `/data/babycare-server`；修改路径无需改代码。
+3. 确认服务器本机 `127.0.0.1:8848` 的 Nacos 中已有命名空间 ID `xc`、`DEFAULT_GROUP` 下的 `common-wxapp` 配置，包含 `WXAPP_DB_CLASS_NAME`、`WXAPP_DB_URL`、`WXAPP_DB_USERNAME` 和 `WXAPP_DB_PASSWORD`。如果命名空间 ID 不同，在部署目录的上级目录创建 `babycare-server.env`，例如：
 
    ```bash
    NACOS_NAMESPACE=实际命名空间ID
@@ -100,8 +100,8 @@ tar -xzf target/babycare-server.tar.gz
    NACOS_PASSWORD=实际密码
    ```
 
-   此文件是由启动脚本读取的 Shell 配置，建议设置权限 `chmod 600 ~/babycare-server.env`。Nacos 和 MySQL 都位于服务器本机时，Nacos 内的 `WXAPP_DB_URL` 应指向服务器本机的 MySQL 地址。需要覆盖随包配置时，可把配置文件放在服务器的 `~/babycare-config/`，部署时会复制到新版本的 `config/` 目录。
-4. 将本工作流和脚本提交并推送到 `main`。首次部署完成后，程序位于 `~/babycare-server/`，日志位于 `~/xcAppLogs/babycare-server-logs/`，历史版本位于 `~/babycare-backups/`。部署脚本通过本机 `8080` 端口检查启动结果；如果应用启动失败，会尝试恢复并启动上一版本。
+   此文件是由启动脚本读取的 Shell 配置，默认路径为 `/data/babycare-server.env`，建议设置权限为 `600`。Nacos 和 MySQL 都位于服务器本机时，Nacos 内的 `WXAPP_DB_URL` 应指向服务器本机的 MySQL 地址。需要覆盖随包配置时，可把配置文件放在部署目录上级目录的 `babycare-config/` 中，部署时会复制到新版本的 `config/` 目录。
+4. 将本工作流和脚本提交并推送到 `main`。默认程序路径为 `/data/babycare-server/`，日志为 `/data/xcAppLogs/babycare-server-logs/`，历史版本为 `/data/babycare-backups/`；设置 `DEPLOY_DIR` 后，这些目录随之移动。部署脚本通过本机 `8080` 端口检查启动结果；如果应用启动失败，会尝试恢复并启动上一版本。如先前在家目录启动过旧版本，迁移前先停止旧实例。
 
 SSH 私钥只保存在 GitHub Secret 中；服务器上的 `babycare-server.env`、Nacos 数据库密码和个性化配置无需提交到仓库。
 

@@ -2,14 +2,33 @@
 set -euo pipefail
 umask 077
 
-APP_DIR="$HOME/babycare-server"
+DEPLOY_DIR="${DEPLOY_DIR:-/data/babycare-server}"
+case "$DEPLOY_DIR" in
+    /*) ;;
+    *) echo "DEPLOY_DIR must be an absolute path" >&2; exit 1 ;;
+esac
+APP_BASENAME=$(basename "$DEPLOY_DIR")
+if [ "$APP_BASENAME" = "." ] || [ "$APP_BASENAME" = ".." ]; then
+    echo "DEPLOY_DIR must name an application directory" >&2
+    exit 1
+fi
+DEPLOY_ROOT=$(cd "$(dirname "$DEPLOY_DIR")" && pwd -P)
+if [ "$DEPLOY_ROOT" = "/" ]; then
+    echo "DEPLOY_DIR must be inside a writable parent directory" >&2
+    exit 1
+fi
+APP_DIR="$DEPLOY_ROOT/$APP_BASENAME"
 ARCHIVE="$HOME/babycare-server.tar.gz"
-CONFIG_OVERLAY="$HOME/babycare-config"
-BACKUP_DIR="$HOME/babycare-backups"
+CONFIG_OVERLAY="$DEPLOY_ROOT/babycare-config"
+BACKUP_DIR="$DEPLOY_ROOT/babycare-backups"
 
 test -f "$ARCHIVE"
+if [ ! -w "$DEPLOY_ROOT" ]; then
+    echo "Deployment user needs write permission on $DEPLOY_ROOT" >&2
+    exit 1
+fi
 mkdir -p "$BACKUP_DIR"
-STAGE=$(mktemp -d "$HOME/.babycare-stage.XXXXXX")
+STAGE=$(mktemp -d "$DEPLOY_ROOT/.babycare-stage.XXXXXX")
 trap 'rm -rf "$STAGE"' EXIT
 tar -xzf "$ARCHIVE" -C "$STAGE"
 NEXT="$STAGE/babycare-server"

@@ -55,12 +55,15 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR || '/data/babycare-server' }}
         run: |
           set -euo pipefail
           SSH_OPTS=(-i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes)
           scp "${SSH_OPTS[@]}" -P "$DEPLOY_PORT" \
             backend/target/babycare-server.tar.gz \
             "${DEPLOY_USER}@${DEPLOY_HOST}:babycare-server.tar.gz"
-          ssh "${SSH_OPTS[@]}" -p "$DEPLOY_PORT" \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" 'bash -s' \
-            < .github/scripts/deploy-backend.sh
+          {
+            printf 'DEPLOY_DIR=%q\n' "$DEPLOY_DIR"
+            cat .github/scripts/deploy-backend.sh
+          } | ssh "${SSH_OPTS[@]}" -p "$DEPLOY_PORT" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" 'bash -s'
