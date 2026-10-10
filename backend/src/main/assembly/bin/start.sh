@@ -27,12 +27,20 @@ nohup "$JAVA_CMD" -Xms"$JVM_XMS" -Xmx"$JVM_XMX" \
     -cp "${APP_HOME}/config:${APP_HOME}/boot/${APP_JAR}:${APP_HOME}/lib/*" \
     "$MAIN_CLASS" "$@" > "${LOG_DIR}/startup.out" 2>&1 &
 echo $! > "$PID_FILE"
-sleep 2
-if is_running; then
-    echo "${APP_NAME} started (PID $(cat "$PID_FILE"))"
-    echo "Log: ${LOG_DIR}/info.log"
-else
-    rm -f "$PID_FILE"
-    echo "${APP_NAME} failed to start; see ${LOG_DIR}/startup.out" >&2
-    exit 1
-fi
+for ((i = 0; i < START_TIMEOUT; i++)); do
+    if ! is_running; then
+        rm -f "$PID_FILE"
+        echo "${APP_NAME} failed to start; see ${LOG_DIR}/startup.out" >&2
+        exit 1
+    fi
+    if curl --silent --output /dev/null --max-time 1 "http://127.0.0.1:${APP_PORT}/"; then
+        echo "${APP_NAME} started (PID $(cat "$PID_FILE"))"
+        echo "Log: tail -f ${LOG_DIR}/info.log"
+        exit 0
+    fi
+    sleep 1
+done
+
+"${APP_HOME}/bin/stop.sh" || true
+echo "${APP_NAME} did not open port ${APP_PORT} within ${START_TIMEOUT}s; see ${LOG_DIR}/startup.out" >&2
+exit 1
