@@ -40,6 +40,7 @@ miniprogram/
 ## 数据库
 
 本项目使用 MySQL + Flyway 管理结构。
+Flyway 执行记录保存在 `babycare_server_VERSION` 表。旧的 `flyway_schema_history` 不会自动改动；已有业务表的数据库首次使用新记录表时会按现有 `baseline-on-migrate` 配置建立基线。
 
 ### 本地启动 MySQL
 
