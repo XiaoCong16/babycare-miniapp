@@ -11,5 +11,12 @@ spring:
         group: DEFAULT_GROUP
         username: nacos
         password: nacos
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: xc
+        group: DEFAULT_GROUP
+        username: nacos
+        password: nacos
+        register-enabled: true
   config:
     import: nacos:common-wxapp?group=DEFAULT_GROUP&refreshEnabled=false
