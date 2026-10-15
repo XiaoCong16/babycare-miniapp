@@ -24,6 +24,24 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
+      - name: Configure Nacos server address
+        env:
+          NACOS_SERVER_ADDR: ${{ vars.NACOS_SERVER_ADDR || '127.0.0.1:8848' }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$NACOS_SERVER_ADDR" =~ ^(\[[0-9A-Fa-f:]+\]|[A-Za-z0-9._-]+):[0-9]+(,(\[[0-9A-Fa-f:]+\]|[A-Za-z0-9._-]+):[0-9]+)*$ ]]; then
+            echo "NACOS_SERVER_ADDR must be a host:port or a comma-separated server list" >&2
+            exit 1
+          fi
+          sed -i -E "s|^([[:space:]]*)server-addr:.*$|\1server-addr: ${NACOS_SERVER_ADDR}|" \
+            backend/src/main/resources/bootstrap.yml
+          replacement_count=$(grep -Fxc "        server-addr: ${NACOS_SERVER_ADDR}" \
+            backend/src/main/resources/bootstrap.yml || true)
+          if [ "$replacement_count" -ne 2 ]; then
+            echo "Expected to configure two Nacos server-addr entries, found $replacement_count" >&2
+            exit 1
+          fi
+
       - name: Build distribution
         run: mvn --batch-mode --no-transfer-progress -f backend/pom.xml clean package
 

@@ -92,8 +92,8 @@ tar -xzf target/babycare-server.tar.gz
    | `DEPLOY_SSH_KEY` | 对应的 SSH 私钥原文，包含首尾标记和换行 |
    | `DEPLOY_KNOWN_HOSTS` | 已核对指纹的服务器 `known_hosts` 条目 |
 
-   SSH 端口不是 22 时，在同一环境的 **Environment variables** 中添加 `DEPLOY_PORT`。可在这里添加 `DEPLOY_DIR` 设置服务器上的完整部署目录，默认是 `/data/babycare-server`；修改路径无需改代码。
-3. 确认服务器本机 `127.0.0.1:8848` 的 Nacos 中已有命名空间 ID `xc`、`DEFAULT_GROUP` 下的 `common-wxapp` 配置，包含 `WXAPP_DB_CLASS_NAME`、`WXAPP_DB_URL`、`WXAPP_DB_USERNAME` 和 `WXAPP_DB_PASSWORD`。如果命名空间 ID 不同，在部署目录的上级目录创建 `babycare-server.env`，例如：
+   SSH 端口不是 22 时，在同一环境的 **Environment variables** 中添加 `DEPLOY_PORT`。可在这里添加 `DEPLOY_DIR` 设置服务器上的完整部署目录，默认是 `/data/babycare-server`；修改路径无需改代码。Nacos 不在部署服务器本机时，再添加 `NACOS_SERVER_ADDR`，值使用 `主机:端口`（例如 `10.0.0.8:8848`）；工作流会在构建前同时替换配置中心和服务注册使用的地址。未配置时默认使用 `127.0.0.1:8848`。
+3. 确认 `NACOS_SERVER_ADDR` 指向的 Nacos 中已有命名空间 ID `xc`、`DEFAULT_GROUP` 下的 `common-wxapp` 配置，包含 `WXAPP_DB_CLASS_NAME`、`WXAPP_DB_URL`、`WXAPP_DB_USERNAME` 和 `WXAPP_DB_PASSWORD`。如果命名空间 ID 不同，在部署目录的上级目录创建 `babycare-server.env`，例如：
 
    ```bash
    NACOS_NAMESPACE=实际命名空间ID
