@@ -3,6 +3,13 @@
     "pages/index/index"
   ],
   "window": {
-    "navigationBarTitleText": "宝宝记录"
-  }
+    "navigationBarTitleText": "宝宝护理",
+    "navigationBarBackgroundColor": "#6d7cff",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f7fb",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": true
+  },
+  "networkTimeout": { "request": 15000 },
+  "sitemapLocation": "sitemap.json"
 }

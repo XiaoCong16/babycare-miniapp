@@ -18,7 +18,7 @@ if [ "$DEPLOY_ROOT" = "/" ]; then
     exit 1
 fi
 APP_DIR="$DEPLOY_ROOT/$APP_BASENAME"
-ARCHIVE="$HOME/babycare-server.tar.gz"
+ARCHIVE="${ARCHIVE:-$HOME/babycare-server.tar.gz}"
 CONFIG_OVERLAY="$DEPLOY_ROOT/babycare-config"
 BACKUP_DIR="$DEPLOY_ROOT/babycare-backups"
 
@@ -53,24 +53,22 @@ if ! mv "$NEXT" "$APP_DIR"; then
     exit 1
 fi
 
-rollback() {
-    "$APP_DIR/bin/stop.sh" || true
-    mv "$APP_DIR" "$BACKUP_DIR/failed-$(date +%Y%m%d%H%M%S)-$$"
+report_deployment_failure() {
+    echo "Latest build remains at $APP_DIR for inspection and restart." >&2
     if [ -n "$BACKUP" ]; then
-        mv "$BACKUP" "$APP_DIR"
-        "$APP_DIR/bin/start.sh" || true
+        echo "Previous build was backed up to $BACKUP." >&2
     fi
 }
 
 if ! "$APP_DIR/bin/start.sh"; then
-    rollback
+    report_deployment_failure
     exit 1
 fi
 
 # Any HTTP response confirms that this Java process has opened its local port.
 for ((i = 0; i < 30; i++)); do
     if ! "$APP_DIR/bin/status.sh" >/dev/null; then
-        rollback
+        report_deployment_failure
         exit 1
     fi
     if curl --silent --show-error --output /dev/null --max-time 2 \
@@ -82,6 +80,7 @@ for ((i = 0; i < 30; i++)); do
     sleep 2
 done
 
-echo "babycare-server did not open port 8080; rolling back" >&2
-rollback
+echo "babycare-server did not open port 8080" >&2
+"$APP_DIR/bin/stop.sh" || true
+report_deployment_failure
 exit 1

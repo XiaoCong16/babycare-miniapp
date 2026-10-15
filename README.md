@@ -74,6 +74,12 @@ tar -xzf target/babycare-server.tar.gz
 ./babycare-server/bin/stop.sh
 ```
 
+`start.sh` 和 `restart.sh` 启动时会打印完整、可复制的 Java 命令。传入 `-l y` 可从启动阶段开始持续输出 `startup.out`，效果与 `tail -f` 相同；按 `Ctrl+C` 只停止跟随日志，后台 Java 进程继续运行：
+
+```bash
+./babycare-server/bin/restart.sh -l y
+```
+
 分发包包含 `bin/`、`boot/`、`lib/` 和 `config/`。`bin/boot.config` 默认设置 `-Xms500m -Xmx500m`；也可用 `restart.sh` 重启。当前应用日志写到分发包上级目录的 `xcAppLogs/babycare-server-logs/info.log`；跨日后的下一条日志或单文件达到 200 MB 时，旧日志会压缩成 `info-yyyy-MM-dd-序号.log.gz`，新日志继续写入 `info.log`。同一天最多保留 10 个压缩归档。手工运行时可编辑分发包内的 `config/bootstrap.yml`；自动部署时请使用下文的服务器环境文件或配置覆盖目录。
 
 ## GitHub Actions 自动部署后端
@@ -102,16 +108,39 @@ tar -xzf target/babycare-server.tar.gz
    ```
 
    此文件是由启动脚本读取的 Shell 配置，默认路径为 `/data/babycare-server.env`，建议设置权限为 `600`。Nacos 和 MySQL 都位于服务器本机时，Nacos 内的 `WXAPP_DB_URL` 应指向服务器本机的 MySQL 地址。需要覆盖随包配置时，可把配置文件放在部署目录上级目录的 `babycare-config/` 中，部署时会复制到新版本的 `config/` 目录。
-4. 将本工作流和脚本提交并推送到 `main`。默认程序路径为 `/data/babycare-server/`，日志为 `/data/xcAppLogs/babycare-server-logs/`，历史版本为 `/data/babycare-backups/`；设置 `DEPLOY_DIR` 后，这些目录随之移动。部署脚本通过本机 `8080` 端口检查启动结果；如果应用启动失败，会尝试恢复并启动上一版本。如先前在家目录启动过旧版本，迁移前先停止旧实例。
+4. 将本工作流和脚本提交并推送到 `main`。默认程序路径为 `/data/babycare-server/`，日志为 `/data/xcAppLogs/babycare-server-logs/`，上一次部署的版本自动备份到 `/data/babycare-backups/`；设置 `DEPLOY_DIR` 后，这些目录随之移动。无论新版本启动成功还是失败，最新构建都会保留在 `/data/babycare-server/`，方便直接检查日志或手工重启；启动失败时工作流仍会标记为失败，但不会把最新构建移到 `failed-*`，也不会覆盖回旧版本。如先前在家目录启动过旧版本，迁移前先停止旧实例。
 
 SSH 私钥只保存在 GitHub Secret 中；服务器上的 `babycare-server.env`、Nacos 数据库密码和个性化配置无需提交到仓库。
 
 ## 微信小程序说明
 
-1. 在微信开发者工具中打开 `miniprogram` 目录。
-2. 配置自己的 AppID。
-3. 替换后端地址为你的实际部署地址。
-4. 在微信后台配置订阅消息模板。
+前端是原生微信小程序，不需要执行 `npm install` 或打包命令。开发时直接在微信开发者工具中导入 `miniprogram` 目录。
+
+### 本地调试
+
+1. 在 `miniprogram/project.config.json` 中把 `appid` 替换成自己的小程序 AppID，或在微信开发者工具导入项目时选择对应 AppID。
+2. 启动本项目后端，确认 `http://localhost:8080` 可访问。
+3. 在微信开发者工具中导入 `miniprogram` 目录并点击“编译”。开发环境默认请求 `http://localhost:8080`。
+4. 使用真机预览时，手机无法访问电脑的 `localhost`。请临时把 `miniprogram/config.js` 中 `develop.apiBaseUrl` 改成电脑的局域网地址，例如 `http://192.168.1.20:8080`，并确保手机与电脑在同一网络、Windows 防火墙允许访问 8080 端口。
+
+前端逻辑测试可在项目根目录执行：
+
+```bash
+node --test miniprogram/tests
+```
+
+### 体验版与正式版
+
+1. 将后端部署在带有效 HTTPS 证书的备案域名下，例如 `https://api.example.cn`。
+2. 修改 `miniprogram/config.js` 中 `trial` 和 `release` 的 `apiBaseUrl`，不要保留示例域名 `https://api.example.com`。
+3. 在微信公众平台的“开发管理 → 开发设置 → 服务器域名”中，把该 HTTPS 地址配置为 `request` 合法域名。
+4. 在微信公众平台创建订阅消息模板，将模板 ID 同时配置到：
+   - `miniprogram/config.js` 的 `develop.templateId`、`trial.templateId` 和 `release.templateId`（本地不测试提醒时可保留 `develop` 为空）
+   - 后端环境变量 `WX_TEMPLATE_ID`
+5. 后端的 `WX_APPID`、`WX_SECRET` 必须与小程序项目使用的 AppID 对应，AppSecret 只能保存在后端，不能写入小程序代码。
+6. 在微信开发者工具中依次完成“预览 → 真机测试 → 上传”，再到微信公众平台将开发版本设为体验版或提交审核，审核通过后发布。
+
+`project.config.json` 默认关闭了开发者工具的合法域名校验，方便本地调试；微信体验版、审核版和正式版仍会执行平台的服务器域名和 HTTPS 校验。
 
 ## 默认提醒规则
 

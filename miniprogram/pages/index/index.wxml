@@ -1,34 +1,112 @@
-<view class="container">
-  <view class="card">
-    <picker mode="selector" range="{{['feed','diaper','sleep','temp','note']}}" bindchange="bindTypeChange">
-      <view>记录类型：{{type}}</view>
-    </picker>
-
-    <view wx:if="{{type === 'feed'}}">
-      <picker mode="selector" range="{{['breast','formula','mix']}}" bindchange="bindFeedTypeChange">
-        <view>喂养方式：{{feedType}}</view>
-      </picker>
+<view class="page-shell">
+  <view class="hero">
+    <view>
+      <text class="hero-kicker">BABY CARE</text>
+      <view class="hero-title">宝宝护理记录</view>
+      <view class="status-row status-{{loginStatus}}">
+        <view class="status-dot"></view>
+        <text>{{loginMessage}}</text>
+      </view>
     </view>
-
-    <view wx:if="{{type === 'diaper'}}">
-      <picker mode="selector" range="{{['wet','dry','poop','diarrhea']}}" bindchange="bindDiaperStatusChange">
-        <view>尿便状态：{{diaperStatus}}</view>
-      </picker>
-    </view>
-
-    <picker mode="datetime" bindchange="bindTimeChange">
-      <view>记录时间：{{recordTime || '选择时间'}}</view>
-    </picker>
-
-    <textarea bindinput="bindNoteInput" placeholder="备注" />
-    <button bindtap="submitRecord">提交记录</button>
+    <button wx:if="{{loginStatus === 'error'}}" class="retry-button" size="mini" bindtap="retryLogin">重试</button>
   </view>
 
-  <view class="list">
-    <view wx:for="{{records}}" wx:key="id" class="item">
-      <text>{{item.recordType}}</text>
-      <text>{{item.recordTime}}</text>
-      <text>{{item.note || ''}}</text>
+  <view class="card record-card">
+    <view class="section-heading">
+      <view>
+        <text class="section-title">添加记录</text>
+        <text class="section-subtitle">记下宝宝此刻的状态</text>
+      </view>
+      <button class="subscribe-button" size="mini" loading="{{subscribing}}" disabled="{{subscribing}}" bindtap="requestSubscribePermission">提醒授权</button>
+    </view>
+
+    <view class="type-grid">
+      <view
+        wx:for="{{typeOptions}}"
+        wx:key="value"
+        class="type-item {{type === item.value ? 'type-item-active' : ''}}"
+        data-type="{{item.value}}"
+        bindtap="selectType"
+      >
+        <text class="type-icon">{{item.icon}}</text>
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="form-area">
+      <view wx:if="{{type === 'feed'}}">
+        <view class="field-label">喂养方式</view>
+        <picker mode="selector" range="{{feedOptions}}" range-key="label" bindchange="bindFeedTypeChange">
+          <view class="picker-field"><text>{{feedTypeLabel}}</text><text class="field-arrow">›</text></view>
+        </picker>
+        <view class="field-label">奶量（ml，可选）</view>
+        <input class="input-field" type="digit" value="{{milkAmount}}" placeholder="例如 120" data-field="milkAmount" bindinput="bindFieldInput" />
+      </view>
+
+      <view wx:if="{{type === 'diaper'}}">
+        <view class="field-label">尿便状态</view>
+        <picker mode="selector" range="{{diaperOptions}}" range-key="label" bindchange="bindDiaperStatusChange">
+          <view class="picker-field"><text>{{diaperStatusLabel}}</text><text class="field-arrow">›</text></view>
+        </picker>
+        <view class="field-label">情况说明（可选）</view>
+        <input class="input-field" value="{{diaperNote}}" placeholder="颜色、次数等" maxlength="255" data-field="diaperNote" bindinput="bindFieldInput" />
+      </view>
+
+      <view wx:if="{{type === 'sleep'}}">
+        <view class="field-label">睡眠时长（分钟）</view>
+        <input class="input-field" type="number" value="{{sleepDuration}}" placeholder="例如 90" data-field="sleepDuration" bindinput="bindFieldInput" />
+      </view>
+
+      <view wx:if="{{type === 'temp'}}">
+        <view class="field-label">体温（℃）</view>
+        <input class="input-field" type="digit" value="{{temperature}}" placeholder="例如 36.8" data-field="temperature" bindinput="bindFieldInput" />
+      </view>
+
+      <view class="field-label">{{type === 'note' ? '备注内容' : '补充备注（可选）'}}</view>
+      <textarea class="textarea-field" value="{{note}}" placeholder="写点需要记住的事情…" maxlength="500" auto-height data-field="note" bindinput="bindFieldInput" />
+
+      <view class="field-label">记录时间</view>
+      <view class="time-row">
+        <picker class="time-picker" mode="date" value="{{recordDate}}" bindchange="bindDateChange">
+          <view class="picker-field compact">{{recordDate}}</view>
+        </picker>
+        <picker class="time-picker" mode="time" value="{{recordTime}}" bindchange="bindTimeChange">
+          <view class="picker-field compact">{{recordTime}}</view>
+        </picker>
+      </view>
+
+      <button class="primary-button" loading="{{submitting}}" disabled="{{loginStatus !== 'ready' || submitting}}" bindtap="submitRecord">{{submitting ? '正在保存…' : '保存这条记录'}}</button>
     </view>
   </view>
+
+  <view class="history-section">
+    <view class="section-heading history-heading">
+      <view>
+        <text class="section-title">最近记录</text>
+        <text class="section-subtitle">下拉页面可以刷新</text>
+      </view>
+      <text class="record-count" wx:if="{{records.length}}">{{records.length}} 条</text>
+    </view>
+
+    <view class="loading-state" wx:if="{{loadingRecords && !records.length}}">正在加载记录…</view>
+    <view class="empty-state" wx:elif="{{!loadingRecords && !records.length}}">
+      <text class="empty-icon">🧸</text>
+      <text class="empty-title">还没有护理记录</text>
+      <text class="empty-copy">保存第一条记录后，会显示在这里</text>
+    </view>
+    <view wx:else>
+      <view wx:for="{{records}}" wx:key="id" class="history-item">
+        <view class="history-icon">{{item.typeIcon}}</view>
+        <view class="history-content">
+          <view class="history-title-row">
+            <text class="history-title">{{item.typeLabel}}</text>
+            <text class="history-time">{{item.displayTime}}</text>
+          </view>
+          <text class="history-description">{{item.description}}</text>
+          <text class="history-note" wx:if="{{item.recordType !== 'note' && item.note}}">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="safe-bottom"></view>
 </view>

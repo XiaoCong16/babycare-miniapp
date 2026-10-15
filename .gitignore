@@ -14,3 +14,4 @@
 /.settings/
 .DS_Store
 node_modules/
+miniprogram/project.private.config.json
