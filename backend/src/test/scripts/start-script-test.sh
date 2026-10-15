@@ -6,6 +6,8 @@ TEST_ROOT=$(mktemp -d)
 APP_HOME="${TEST_ROOT}/babycare-server"
 OUTPUT_FILE="${TEST_ROOT}/start-output.log"
 FAILURE_OUTPUT_FILE="${TEST_ROOT}/start-failure-output.log"
+LOG_DIR="${TEST_ROOT}/xcAppLogs/babycare-server-logs"
+LOG_FILE="${LOG_DIR}/info.log"
 
 cleanup() {
     if [ -f "${APP_HOME}/bin/babycare-server.pid" ]; then
@@ -52,6 +54,17 @@ JAVA_CMD="${TEST_ROOT}/fake-java.sh" START_TIMEOUT=2 \
 grep -F "Starting babycare-server with command:" "$OUTPUT_FILE"
 grep -F "mock startup line" "$OUTPUT_FILE"
 grep -F -- "-cp" "$OUTPUT_FILE"
+test -f "$LOG_FILE"
+grep -F "mock startup line" "$LOG_FILE"
+grep -F -- "-Dnacos.logging.default.config.enabled=false" "$OUTPUT_FILE"
+if grep -F -- "-DJM.LOG.PATH" "$OUTPUT_FILE"; then
+    echo "Nacos must use the application Log4j2 configuration" >&2
+    exit 1
+fi
+if [ -e "${LOG_DIR}/startup.out" ] || [ -d "${LOG_DIR}/nacos" ]; then
+    echo "Only info.log may be used as the active application log" >&2
+    exit 1
+fi
 if grep -F "<-l>" "$OUTPUT_FILE"; then
     echo "-l y must be consumed by start.sh instead of passed to Java" >&2
     exit 1

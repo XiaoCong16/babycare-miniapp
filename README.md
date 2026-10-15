@@ -80,7 +80,7 @@ tar -xzf target/babycare-server.tar.gz
 ./babycare-server/bin/restart.sh -l y
 ```
 
-分发包包含 `bin/`、`boot/`、`lib/` 和 `config/`。`bin/boot.config` 默认设置 `-Xms500m -Xmx500m`；也可用 `restart.sh` 重启。当前应用日志写到分发包上级目录的 `xcAppLogs/babycare-server-logs/info.log`；跨日后的下一条日志或单文件达到 200 MB 时，旧日志会压缩成 `info-yyyy-MM-dd-序号.log.gz`，新日志继续写入 `info.log`。同一天最多保留 10 个压缩归档。手工运行时可编辑分发包内的 `config/bootstrap.yml`；自动部署时请使用下文的服务器环境文件或配置覆盖目录。
+分发包包含 `bin/`、`boot/`、`lib/` 和 `config/`。`bin/boot.config` 默认设置 `-Xms500m -Xmx500m`；也可用 `restart.sh` 重启。应用启动输出、业务日志和 Nacos 客户端日志统一写到分发包上级目录的 `xcAppLogs/babycare-server-logs/info.log`，不会再创建 `startup.out` 或 `nacos/` 日志目录；跨日后的下一条日志或单文件达到 200 MB 时，旧日志会压缩成 `info-yyyy-MM-dd-序号.log.gz`，新日志继续写入 `info.log`。同一天最多保留 10 个压缩归档。手工运行时可编辑分发包内的 `config/bootstrap.yml`；自动部署时请使用下文的服务器环境文件或配置覆盖目录。
 
 ## GitHub Actions 自动部署后端
 

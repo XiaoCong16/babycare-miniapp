@@ -53,12 +53,14 @@ fi
 mkdir -p "$LOG_DIR"
 rm -f "$PID_FILE"
 cd "$APP_HOME"
-STARTUP_LOG="${LOG_DIR}/startup.out"
+LOG_FILE="${LOG_DIR}/info.log"
+touch "$LOG_FILE"
+LOG_START_LINE=$(( $(wc -l < "$LOG_FILE") + 1 ))
 JAVA_COMMAND=(
     "$JAVA_CMD"
     "-Xms${JVM_XMS}"
     "-Xmx${JVM_XMX}"
-    "-DJM.LOG.PATH=${LOG_DIR}"
+    "-Dnacos.logging.default.config.enabled=false"
     -cp "${APP_HOME}/config:${APP_HOME}/boot/${APP_JAR}:${APP_HOME}/lib/*"
     "$MAIN_CLASS"
     "${APP_ARGS[@]}"
@@ -66,16 +68,16 @@ JAVA_COMMAND=(
 
 printf 'Starting %s with command:\n  nohup' "$APP_NAME"
 printf ' %q' "${JAVA_COMMAND[@]}"
-printf ' > %q 2>&1 &\n' "$STARTUP_LOG"
+printf ' >> %q 2>&1 &\n' "$LOG_FILE"
 
-nohup "${JAVA_COMMAND[@]}" > "$STARTUP_LOG" 2>&1 &
+nohup "${JAVA_COMMAND[@]}" >> "$LOG_FILE" 2>&1 &
 APP_PID=$!
 echo "$APP_PID" > "$PID_FILE"
 
 LOG_TAIL_PID=""
 if [ "$SHOW_LOGS" = y ]; then
-    echo "Following startup log: ${STARTUP_LOG} (Ctrl+C to stop following)"
-    tail --pid="$APP_PID" -n +1 -F "$STARTUP_LOG" &
+    echo "Following application log: ${LOG_FILE} (Ctrl+C to stop following)"
+    tail --pid="$APP_PID" -n +"$LOG_START_LINE" -F "$LOG_FILE" &
     LOG_TAIL_PID=$!
     trap 'kill "$LOG_TAIL_PID" 2>/dev/null || true; exit 130' INT TERM
 fi
@@ -86,7 +88,7 @@ for ((i = 0; i < START_TIMEOUT; i++)); do
         if [ -n "$LOG_TAIL_PID" ]; then
             wait "$LOG_TAIL_PID" || true
         fi
-        echo "${APP_NAME} failed to start; see ${STARTUP_LOG}" >&2
+        echo "${APP_NAME} failed to start; see ${LOG_FILE}" >&2
         exit 1
     fi
     if curl --silent --output /dev/null --max-time 1 "http://127.0.0.1:${APP_PORT}/"; then
@@ -110,5 +112,5 @@ done
 if [ -n "$LOG_TAIL_PID" ]; then
     wait "$LOG_TAIL_PID" || true
 fi
-echo "${APP_NAME} did not open port ${APP_PORT} within ${START_TIMEOUT}s; see ${STARTUP_LOG}" >&2
+echo "${APP_NAME} did not open port ${APP_PORT} within ${START_TIMEOUT}s; see ${LOG_FILE}" >&2
 exit 1
